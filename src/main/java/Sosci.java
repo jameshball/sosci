@@ -4,17 +4,18 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
 import java.nio.*;
-import java.util.Arrays;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL43.glInvalidateBufferData;
 import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class Sosci {
+
+  private static final int NUM_VERTICES = 4000;
+  private static final int VERTEX_SIZE = 2;
 
   private final AudioLoopback loopback;
 
@@ -54,7 +55,7 @@ public class Sosci {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
 
     // Create the window
-    window = glfwCreateWindow(640, 480, "Hello World!", NULL, NULL);
+    window = glfwCreateWindow(640, 480, "sosci", NULL, NULL);
     if ( window == NULL )
       throw new RuntimeException("Failed to create the GLFW window");
 
@@ -100,12 +101,11 @@ public class Sosci {
     // bindings available for use.
     GL.createCapabilities();
 
-    int vertices = 10;
-    int vertex_size = 2;
-    int index = 0;
+    glfwWindowHint(GLFW_STENCIL_BITS, 8);
+    glfwWindowHint(GLFW_SAMPLES, 8);
 
-    FloatBuffer vertex_data = BufferUtils.createFloatBuffer(vertices * vertex_size);
-    for (int i = 0; i < vertices; i++) {
+    FloatBuffer vertex_data = BufferUtils.createFloatBuffer(NUM_VERTICES * VERTEX_SIZE);
+    for (int i = 0; i < NUM_VERTICES; i++) {
       vertex_data.put(new float[] { 0, 0 });
     }
     vertex_data.flip();
@@ -120,15 +120,13 @@ public class Sosci {
     while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-      Vector2 position = loopback.getOutput();
-      glBufferSubData(GL_ARRAY_BUFFER, 4 * vertex_size * index, new float[] {(float) position.getX(), (float) position.getY()});
-      index = ++index % vertices;
+      glBufferSubData(GL_ARRAY_BUFFER, 0, loopback.getBuffer());
 
       glColor4f(0, 1, 0, 0);
       glBindBuffer(GL_ARRAY_BUFFER, vbo_vertex_handle);
-      glVertexPointer(vertex_size, GL_FLOAT, 0, 0L);
+      glVertexPointer(VERTEX_SIZE, GL_FLOAT, 0, 0L);
       glEnableClientState(GL_VERTEX_ARRAY);
-      glDrawArrays(GL_LINES, 0, vertices);
+      glDrawArrays(GL_POINTS, 0, NUM_VERTICES);
       glDisableClientState(GL_VERTEX_ARRAY);
 
       glfwSwapBuffers(window); // swap the color buffers
@@ -140,7 +138,7 @@ public class Sosci {
   }
 
   public static void main(String[] args) {
-    new Sosci(new AudioLoopback()).run();
+    new Sosci(new AudioLoopback(NUM_VERTICES)).run();
   }
 
 }

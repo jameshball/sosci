@@ -21,11 +21,19 @@ import xt.audio.XtStream;
 
 public class AudioLoopback implements Runnable {
 
-  private Vector2 output = new Vector2();
+  private final int bufferSize;
+
+  private final float[] buffer;
+  private int bufferIndex = 0;
   private boolean stopped;
 
-  public Vector2 getOutput() {
-    return output;
+  public AudioLoopback(int numSamples) {
+    this.bufferSize = 2 * numSamples;
+    this.buffer = new float[this.bufferSize];
+  }
+
+  public float[] getBuffer() {
+    return buffer;
   }
 
   // audio streaming callback
@@ -46,10 +54,9 @@ public class AudioLoopback implements Runnable {
   void processAudio(short[] audio, int frames) {
     // convert from short[] to byte[]
     for (int frame = 0; frame < frames; frame++) {
-      output = new Vector2(
-        (float) audio[frame * 2] / Short.MAX_VALUE,
-        (float) audio[frame * 2 + 1] / Short.MAX_VALUE
-      );
+      buffer[bufferIndex++] = (float) audio[frame * 2] / Short.MAX_VALUE;
+      buffer[bufferIndex++] = (float) audio[frame * 2 + 1] / Short.MAX_VALUE;
+      bufferIndex %= bufferSize;
     }
   }
 
